@@ -25,3 +25,7 @@ Untitled*.ipynb
 
 # OS
 .DS_Store
+
+# 팀원 EDA (로컬 참고용, git 제외)
+/준한이 EDA/
+/순은누나 EDA/
