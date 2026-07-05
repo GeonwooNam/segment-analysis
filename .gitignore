@@ -1,0 +1,27 @@
+# 원본 데이터 (대회 제공, 용량 큼)
+/train/
+/test/
+/features/
+sample_submission.csv
+신용카드*
+/예시/
+
+# 루트 results/ (cascade 에이전트 바이너리 출력)
+/results/
+
+# 개인 results 중 바이너리만 제외 (csv/png는 추적)
+geonu/results/*.npy
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+/.venv/
+*.egg-info/
+
+# Jupyter
+.ipynb_checkpoints/
+Untitled*.ipynb
+
+# OS
+.DS_Store
