@@ -12,6 +12,9 @@ sample_submission.csv
 # 개인 results 중 바이너리만 제외 (csv/png는 추적)
 geonu/results/*.npy
 
+# CatBoost 학습 로그
+catboost_info/
+
 # Python
 __pycache__/
 *.pyc
@@ -29,3 +32,13 @@ Untitled*.ipynb
 # 팀원 EDA (로컬 참고용, git 제외)
 /준한이 EDA/
 /순은누나 EDA/
+/현종이 EDA/
+
+# 외부 자료·전송용 파일 (git 제외)
+/코드 공유/
+/geonu.zip
+
+# 비공식 문서 (로컬 전용, git 제외)
+/readme.md
+/docs/데탑_실행_가이드.md
+/docs/modeling_v3_해설.html
