@@ -148,10 +148,14 @@ y_s3 = (y_seg_s3 == 'B').astype(int)
 b_in_s3 = y_s3.sum()
 print(f"\nStage3 훈련셋: {len(X_s3)}명 (실제 B {b_in_s3}명 포함)")
 
+# test_s2_AB_mask는 skip_s3 분기 양쪽에서 필요하므로 미리 계산
+test_s2_AB_mask = (np.argmax(test_s2_prob, axis=1) == 0)
+X_test_s2_AB = X_test_s1[test_s2_AB_mask].reset_index(drop=True)
+
 if b_in_s3 < 3:
     print("[Warning] Stage3 B가 3명 미만 → Stage3 생략, AB → 전부 A 처리")
     oof_s3 = np.zeros(len(X_s3), dtype=int)
-    test_s3_prob_arr = np.zeros(len(X_test_s1))
+    test_s3_prob_arr = np.zeros(len(X_test_s2_AB))
     skip_s3 = True
 else:
     skip_s3 = False
@@ -173,9 +177,6 @@ else:
 
     skf3 = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
     oof_s3_prob = np.zeros(len(X_s3))
-
-    test_s2_AB_mask = (np.argmax(test_s2_prob, axis=1) == 0)
-    X_test_s2_AB = X_test_s1[test_s2_AB_mask].reset_index(drop=True)
     test_s3_prob_arr = np.zeros(len(X_test_s2_AB))
 
     for fold, (tr_idx, val_idx) in enumerate(skf3.split(X_s3, y_s3)):

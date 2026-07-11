@@ -1,0 +1,230 @@
+<title>세그먼트 분류 v3 — 모델링 해설</title>
+<style>
+  :root {
+    --bg: #FAFAF7;
+    --surface: #F1F1EC;
+    --ink: #1F2B2A;
+    --ink-soft: #5A6866;
+    --line: #DDDED6;
+    --accent: #0E6B5F;
+    --accent-soft: #E2EEEB;
+    --mono-bg: #EDF0EC;
+    --seg-a: #8A6D1F;
+    --seg-b: #A4443C;
+    --seg-cde: #43655F;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #171D1C;
+      --surface: #1F2726;
+      --ink: #E4E8E4;
+      --ink-soft: #93A19E;
+      --line: #33403D;
+      --accent: #4FB3A4;
+      --accent-soft: #22332F;
+      --mono-bg: #1C2422;
+      --seg-a: #CBA84E;
+      --seg-b: #D98077;
+      --seg-cde: #7FA79E;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #171D1C; --surface: #1F2726; --ink: #E4E8E4; --ink-soft: #93A19E;
+    --line: #33403D; --accent: #4FB3A4; --accent-soft: #22332F; --mono-bg: #1C2422;
+    --seg-a: #CBA84E; --seg-b: #D98077; --seg-cde: #7FA79E;
+  }
+  :root[data-theme="light"] {
+    --bg: #FAFAF7; --surface: #F1F1EC; --ink: #1F2B2A; --ink-soft: #5A6866;
+    --line: #DDDED6; --accent: #0E6B5F; --accent-soft: #E2EEEB; --mono-bg: #EDF0EC;
+    --seg-a: #8A6D1F; --seg-b: #A4443C; --seg-cde: #43655F;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Pretendard Variable", Pretendard, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif;
+    line-height: 1.7;
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+  main { max-width: 46rem; margin: 0 auto; padding: 3.5rem 1.25rem 5rem; }
+
+  .eyebrow {
+    font-size: .75rem; font-weight: 700; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--accent); margin: 0 0 .5rem;
+  }
+  h1 {
+    font-size: 1.9rem; font-weight: 800; line-height: 1.3;
+    letter-spacing: -.01em; margin: 0 0 .4rem; text-wrap: balance;
+  }
+  .lede { color: var(--ink-soft); margin: 0 0 .75rem; font-size: 1.02rem; }
+  .meta { font-size: .82rem; color: var(--ink-soft); display: flex; gap: 1rem; flex-wrap: wrap; }
+
+  h2 {
+    font-size: 1.22rem; font-weight: 750; margin: 3rem 0 .8rem;
+    padding-top: 1.6rem; border-top: 1px solid var(--line); text-wrap: balance;
+  }
+  h3 { font-size: 1rem; font-weight: 700; margin: 1.6rem 0 .4rem; }
+  p { margin: .65rem 0; }
+  strong { font-weight: 700; }
+
+  code, .num {
+    font-family: "SF Mono", "Cascadia Code", Consolas, ui-monospace, monospace;
+    font-size: .86em; background: var(--mono-bg);
+    padding: .1em .35em; border-radius: 4px;
+  }
+  .num { background: none; padding: 0; font-variant-numeric: tabular-nums; }
+
+  table {
+    border-collapse: collapse; width: 100%; font-size: .9rem; margin: 1rem 0;
+  }
+  th {
+    text-align: left; font-size: .78rem; letter-spacing: .06em;
+    color: var(--ink-soft); font-weight: 700; text-transform: uppercase;
+    padding: .45rem .7rem .45rem 0; border-bottom: 1.5px solid var(--ink);
+  }
+  td { padding: .55rem .7rem .55rem 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  td:first-child { white-space: nowrap; }
+  .tablewrap { overflow-x: auto; }
+  table .r { text-align: right; font-variant-numeric: tabular-nums; }
+  th.r { text-align: right; }
+
+  .callout {
+    background: var(--accent-soft); border-radius: 8px;
+    padding: .9rem 1.1rem; margin: 1.2rem 0; font-size: .95rem;
+  }
+  .callout b { color: var(--accent); }
+
+  /* 아키텍처 다이어그램 */
+  .arch { display: grid; gap: .8rem; grid-template-columns: 1fr 1fr; margin: 1.4rem 0; }
+  .track {
+    border: 1.5px solid var(--line); border-radius: 10px;
+    background: var(--surface); padding: 1rem 1.1rem;
+  }
+  .track h4 { margin: 0 0 .3rem; font-size: .95rem; font-weight: 750; }
+  .track p { margin: .3rem 0; font-size: .86rem; color: var(--ink-soft); }
+  .track .tag {
+    display: inline-block; font-size: .72rem; font-weight: 700;
+    letter-spacing: .08em; color: var(--accent); margin-bottom: .35rem;
+  }
+  .arch-merge {
+    grid-column: 1 / -1; text-align: center;
+    border: 1.5px solid var(--accent); border-radius: 10px;
+    padding: .8rem 1rem; font-size: .92rem; font-weight: 600;
+    background: var(--accent-soft);
+  }
+  .arrow { grid-column: 1 / -1; text-align: center; color: var(--ink-soft); font-size: .9rem; margin: -.3rem 0; }
+
+  .seg { font-weight: 750; }
+  .seg.a { color: var(--seg-a); }
+  .seg.b { color: var(--seg-b); }
+  .seg.cde { color: var(--seg-cde); }
+
+  ol, ul { padding-left: 1.3rem; margin: .6rem 0; }
+  li { margin: .35rem 0; }
+  li::marker { color: var(--accent); font-weight: 700; }
+
+  .flow {
+    background: var(--mono-bg); border-radius: 8px; padding: .9rem 1.1rem;
+    font-family: "SF Mono", "Cascadia Code", Consolas, ui-monospace, monospace;
+    font-size: .82rem; line-height: 1.9; overflow-x: auto; white-space: pre;
+  }
+
+  @media (max-width: 560px) { .arch { grid-template-columns: 1fr; } h1 { font-size: 1.55rem; } }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<main>
+  <p class="eyebrow">신용카드 고객 세그먼트 분류 · Dacon</p>
+  <h1>모델링 v3 — 어떻게 만들었나</h1>
+  <p class="lede">Cascade v2(Public 0.44)의 실패 원인을 진단하고, 상위 1~3등 솔루션의 검증된 요소를 접목해 재설계한 파이프라인의 해설.</p>
+  <p class="meta"><span>2026-07-09</span><span>작성: 건우 + Claude</span><span>코드: geonu/preprocess_v3.py 외 3개</span></p>
+
+  <h2>1. 문제 구조</h2>
+  <p>고객 <span class="num">40만 명</span> × 6개월(2018.07–12) × 8개 테이블 = <span class="num">240만 행 × 858 컬럼</span>. 고객마다 등급 A–E 하나를 예측하고, 지표는 <strong>macro-F1</strong> — 다섯 클래스의 F1을 동등 가중 평균한다.</p>
+  <div class="tablewrap"><table>
+    <tr><th>클래스</th><th class="r">train 고객 수</th><th>의미</th></tr>
+    <tr><td><span class="seg a">A</span></td><td class="r">162</td><td>최상위. 극소수지만 F1의 1/5을 차지</td></tr>
+    <tr><td><span class="seg b">B</span></td><td class="r">24</td><td>40만 중 24명 — 사실상 바늘 찾기</td></tr>
+    <tr><td><span class="seg cde">C</span></td><td class="r">~21,000</td><td>D와 경계가 흐림 — 주요 손실 지점</td></tr>
+    <tr><td><span class="seg cde">D</span></td><td class="r">~58,000</td><td></td></tr>
+    <tr><td><span class="seg cde">E</span></td><td class="r">~320,000</td><td>80%. 분리 자체는 쉬움</td></tr>
+  </table></div>
+  <p>macro-F1의 함정: E를 완벽히 맞혀도 5점 중 1점일 뿐이다. 점수는 <strong>소수 클래스(A·B)와 C↔D 경계</strong>에서 갈린다.</p>
+
+  <h2>2. v2는 왜 0.44였나</h2>
+  <p>v2는 직렬 cascade였다 — Stage 1(E 거르기) → Stage 2(AB/C/D) → Stage 3(A/B). 철학은 "탐색 공간을 단계적으로 좁힌다"였고 방향 자체는 옳았지만, <strong>직렬 배선이 치명적</strong>이었다.</p>
+  <div class="flow">Stage 1 → Stage 2 (AB recall 16.7%) → Stage 3
+                 └ 실제 A/B 186명 중 ~155명이 여기서
+                   C/D로 확정 — Stage 3에 도착조차 못 함</div>
+  <p>앞 단계의 오분류가 복구 불가능하게 전파된다. Stage 3 모델이 아무리 좋아도 입력이 없다. 실제로 B에게 넘어온 후보는 1명이었다.</p>
+  <div class="callout"><b>대회 종료 후 확인:</b> 1등 팀도 "A/B 전용 모델 + C 보정"이라는 같은 판단을 했다. 다른 것은 배선 하나 — 그들은 직렬이 아니라 <b>병렬</b>로 묶고 마지막에 덮어썼다.</div>
+
+  <h2>3. v3 구조 — 2트랙 병렬</h2>
+  <div class="arch">
+    <div class="track">
+      <span class="tag">TRACK 1 · BASE</span>
+      <h4><span class="seg cde">C / D / E</span> 3분류</h4>
+      <p>train에서 A/B 186명을 <strong>아예 제거</strong>하고 학습. 프리미엄 이상치가 사라져 C↔D 경계에만 집중.</p>
+      <p>CatBoost · class_weight <code>C=2</code> (1등 방식) · 5-fold 확률 평균</p>
+    </div>
+    <div class="track">
+      <span class="tag">TRACK 2 · VIP</span>
+      <h4><span class="seg a">A</span> / <span class="seg b">B</span> 전용 모델</h4>
+      <p><strong>①</strong> AB vs 나머지 이진 → 낮은 threshold로 후보 풀 추출 (recall ≥ 0.9 최소 풀 자동 탐색)</p>
+      <p><strong>②</strong> 풀 안에서 A vs B 정밀 분류 (B 가중 극대화, ID 단위 판정)</p>
+    </div>
+    <div class="arrow">▼ 두 트랙은 서로를 모른 채 독립 실행 ▼</div>
+    <div class="arch-merge">BASE 예측지 위에 VIP의 A/B 판정을 <u>덮어쓰기</u> → 최종 제출</div>
+  </div>
+  <p>병렬 구조가 해결하는 것:</p>
+  <ol>
+    <li><strong>오류 전파 차단</strong> — VIP가 A/B 고객을 놓쳐도 그 고객은 BASE의 C/D/E 예측을 받는다. "잘못된 관문에 갇히는" 일이 없다.</li>
+    <li><strong>깨끗한 BASE</strong> — A/B는 C/D와 분포가 겹치는 고소비 고객이라, 빼고 학습하면 경계가 선명해진다. 데이터 손실은 0.05%.</li>
+    <li><strong>독립 개선</strong> — BASE 튜닝과 VIP 튜닝이 서로 간섭하지 않아 실험 사이클이 빠르다.</li>
+  </ol>
+  <p>안전장치: VIP 덮어쓰기는 Stage① 확률 상위 <code>VIP_CAP=60</code>명으로 제한한다. test 10만 명의 기대 A/B는 비율상 ~46명 — 풀 전체를 덮으면 D·E까지 오염되기 때문.</p>
+
+  <h2>4. 전처리 — 3등 팀의 레시피</h2>
+  <ol>
+    <li>8개 테이블을 월별 병합, 6개월 세로 결합 (<span class="num">240만 × 858</span>)</li>
+    <li>단일값(상수) 컬럼 제거 — 준한이 EDA의 상수 목록과 교차 검증용으로 <code>const_cols_v3.csv</code> 저장</li>
+    <li><code>int64→int32, float64→float32</code> 다운캐스팅 — 메모리 절반</li>
+    <li>문자열 42개 컬럼 Label Encoding (train+test 범주 합집합 기준)</li>
+    <li><code>features/train_v3.parquet</code> 저장 — <strong>이후 모든 실험은 여기서 시작</strong></li>
+  </ol>
+  <p>주의했던 것: sentinel 결측(날짜 <code>10101</code> 등)은 3등처럼 일괄 drop하지 않고 유지했다. 트리 모델이 분기로 처리할 수 있고, 우리 데이터의 결측은 "이용 없음"이라는 정보 그 자체이기 때문.</p>
+
+  <h2>5. 검증 설계 — v1의 교훈</h2>
+  <p>v1이 OOF 0.85를 찍고 Public 0.48이 나온 원인은 <strong>데이터 누수</strong>였다(스테이지 간 라우팅에 실제 라벨이 섞임). v3의 원칙:</p>
+  <ul>
+    <li><strong>StratifiedGroupKFold(group=ID)</strong> — 같은 고객의 6개월 행이 fold를 넘나들지 않게</li>
+    <li>스테이지 간 전달은 전부 <strong>OOF 예측 기준</strong> (test와 동일한 정보 흐름)</li>
+    <li>ID 단위 최종 판정 — 6개월 확률 평균(soft 다수결, 3등 방식)</li>
+    <li>제출마다 OOF와 Public을 페어로 기록, 갭 ±0.02 초과 시 CV 재점검</li>
+  </ul>
+
+  <h2>6. 상위 팀에서 취한 것 / 버린 것</h2>
+  <div class="tablewrap"><table>
+    <tr><th>요소</th><th>출처</th><th>판단</th></tr>
+    <tr><td>2트랙 병렬 + 덮어쓰기</td><td>1등</td><td><strong>채택</strong> — v2 병목의 구조적 해법</td></tr>
+    <tr><td>class_weight C=2</td><td>1등</td><td><strong>채택</strong> — C↔D 혼동 진단이 우리와 동일</td></tr>
+    <tr><td>다운캐스팅 + parquet 중간 저장</td><td>2·3등</td><td><strong>채택</strong></td></tr>
+    <tr><td>상수 컬럼 기계적 제거</td><td>3등</td><td><strong>채택</strong></td></tr>
+    <tr><td>월 행 유지 + ID 다수결</td><td>3등</td><td>실험 — 고객 집계 방식과 OOF 비교 예정</td></tr>
+    <tr><td>3모델 소프트 보팅</td><td>2·3등</td><td>후순위 — 단일 파이프라인 완성 후</td></tr>
+    <tr><td>SMOTE 오버샘플링</td><td>2등</td><td><strong>버림</strong> — 1등도 효과 없음 확인, class_weight 유지</td></tr>
+    <tr><td>파생변수 0개</td><td>3등</td><td>부분 채택 — BASE는 최소주의, VIP는 EDA 검증 피처 유지</td></tr>
+  </table></div>
+  <p>파생변수를 가른 기준: 표본이 많은 C/D/E는 트리가 원본 컬럼에서 스스로 경계를 학습하지만, <strong>24명뿐인 B</strong>는 조합 패턴을 학습할 표본이 없다. 준한이 EDA가 찾아둔 분리 신호(평잔_할부 sep=18.2, 앱 방문 3배, 포인트 소진형)를 VIP 피처로 명시해 학습 부담을 미리 덜어준다.</p>
+
+  <h2>7. 남은 판단 지점</h2>
+  <ul>
+    <li>전 데이터에서 Stage① threshold와 후보 풀 크기 확인 (디버그 샘플과 다르게 나올 지점)</li>
+    <li><code>VIP_CAP</code> 조정 — 첫 제출의 OOF/Public 갭을 보고</li>
+    <li>행 단위 실험(고객 집계 vs 월 행) 결과 → 토요일 팀 공유 안건</li>
+    <li>합성 데이터 확인 결과(금액 끝자리 균등, 금액·건수 모순 31만 행)에 따라 컬럼 간 비율 파생은 OOF 개선 확인 시에만</li>
+  </ul>
+
+  <div class="callout"><b>시간 배분 원칙 (1등의 통찰):</b> B recall에 매몰되지 않는다. macro-F1 기여도는 C↔D 경계 &gt; A 정밀도 &gt; B 순으로 크다. 1등조차 B 확장은 "1명 외 불가능"으로 결론냈다.</div>
+</main>
